@@ -1,0 +1,87 @@
+How to Run Groomify AI Chatbot
+==============================
+
+1. Environment Setup
+------------------
+a. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Linux/Mac
+venv\Scripts\activate  # On Windows
+```
+
+b. Install dependencies:
+```bash
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+```
+
+2. Model Setup
+------------
+Ensure all model files are in the correct location:
+- models/face_shape_model.pth
+- models/gender_detection_model.pth
+- models/hair_style_model.pth
+- models/skin_type_model.pth
+
+3. Dataset Setup
+--------------
+Verify dataset files are present:
+- datasets/cosmetics.csv
+- datasets/hairstyle_recommendations.csv
+
+4. Running the Application
+-----------------------
+a. Start the Flask server:
+```bash
+python app.py
+```
+
+b. Access the application:
+- Open a web browser
+- Navigate to http://localhost:5000
+
+5. Using the Application
+----------------------
+a. Image Analysis:
+- Click "Upload Image" to analyze a face image
+- The system will detect:
+  * Face shape
+  * Hair style
+  * Gender
+  * Skin type
+
+b. Chat Interface:
+- Type questions about:
+  * Hairstyle recommendations
+  * Skincare advice
+  * Product recommendations
+- Use the "Help" button to see available commands
+
+6. Troubleshooting
+----------------
+Common issues and solutions:
+
+a. Model loading errors:
+- Verify all .pth files are present in models/ directory
+- Check CUDA availability if using GPU
+- Ensure PyTorch version matches requirements
+
+b. Image upload issues:
+- Check image format (supported: jpg, jpeg, png)
+- Verify upload directory permissions
+- Maximum image size: 10MB
+
+c. Dependencies issues:
+- Ensure all requirements are installed
+- Check Python version (recommended: 3.10+)
+- Verify CUDA/cuDNN versions if using GPU
+
+7. Additional Notes
+-----------------
+- The system creates an 'uploads' directory for temporary image storage
+- GPU acceleration is automatic if available
+- Default port is 5000 (can be changed in app.py)
+- Debug mode is enabled by default (disable in production)
+
+For development and contributions, refer to README.md
