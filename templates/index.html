@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Groomify AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #2c3e50, #3498db);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        #chat-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            height: 600px;
+            overflow-y: auto;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        #message-form {
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #message-input {
+            flex-grow: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        #message-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+        }
+
+        button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        button i {
+            font-size: 18px;
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message {
+            background: #f8f9fa;
+            color: #2c3e50;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            position: absolute;
+            bottom: -20px;
+            right: 10px;
+        }
+
+        .bot-message .message-time {
+            color: #95a5a6;
+        }
+
+        #upload-section {
+            width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        #preview-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        #image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 15px;
+            display: none;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .analysis-result {
+            background: rgba(236, 240, 241, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .analysis-result h3 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        .analysis-item {
+            margin: 12px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .recommendations-container {
+            margin-top: 20px;
+            border-top: 2px solid rgba(52, 152, 219, 0.2);
+            padding-top: 15px;
+        }
+
+        .recommendation-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .recommendation-style {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .recommendation-description {
+            color: #7f8c8d;
+            font-size: 0.95em;
+            line-height: 1.4;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label {
+            font-weight: 500;
+            color: #34495e;
+        }
+
+        .value {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .upload-btn-wrapper {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .upload-btn-wrapper p {
+            color: #7f8c8d;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .drag-area {
+            border: 2px dashed #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .drag-area:hover {
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .drag-area i {
+            font-size: 40px;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        .drag-area h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .drag-area p {
+            color: #7f8c8d;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading i {
+            color: #3498db;
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .product-recommendations {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .product-brand {
+            color: #3498db;
+            font-weight: 600;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+
+        .product-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .product-price {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .product-rating {
+            color: #f39c12;
+            margin-left: 10px;
+        }
+
+        .product-ingredients {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        .analysis-message {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .analysis-message h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .analysis-section {
+            margin: 15px 0;
+        }
+
+        .analysis-section h4 {
+            color: #34495e;
+            margin-bottom: 8px;
+        }
+
+        .analysis-detail {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(236, 240, 241, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin: 5px 0;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .detail-value {
+            color: #3498db;
+            font-weight: 600;
+        }
+
+        .confidence {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-left: 10px;
+        }
+
+        .faq-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .faq-title {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .faq-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(236, 240, 241, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            background: rgba(236, 240, 241, 0.8);
+            transform: translateX(5px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .help-button {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .reset-button {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 15px;
+            position: relative;
+            animation: slideIn 0.3s;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #95a5a6;
+            transition: color 0.3s;
+        }
+
+        .close-modal:hover {
+            color: #2c3e50;
+        }
+
+        .help-section {
+            margin: 20px 0;
+        }
+
+        .help-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .example-questions {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .example-question {
+            background: rgba(236, 240, 241, 0.8);
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-question:hover {
+            background: rgba(236, 240, 241, 1);
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Groomify AI Assistant</h1>
+        <p>Get personalized beauty and grooming recommendations powered by AI</p>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2>How can I help you?</h2>
+            
+            <div class="help-section">
+                <h3>I can help you with:</h3>
+                <ul>
+                    <li>Analyzing your face shape, skin type, and hairstyle</li>
+                    <li>Recommending personalized hairstyles</li>
+                    <li>Creating customized skincare routines</li>
+                    <li>Suggesting suitable beauty products</li>
+                </ul>
+            </div>
+
+            <div class="help-section">
+                <h3>Try asking me:</h3>
+                <div class="example-questions">
+                    <div class="example-question" onclick="askQuestion(this.textContent)">
+                        What's the best hairstyle for my face shape?
+                    </div>
+                    <div class="example-question" onclick="askQuestion(this.textContent)">
+                        Can you recommend a skincare routine for my skin type?
+                    </div>
+                    <div class="example-question" onclick="askQuestion(this.textContent)">
+                        What makeup would suit my skin tone?
+                    </div>
+                    <div class="example-question" onclick="askQuestion(this.textContent)">
+                        How should I take care of oily skin?
+                    </div>
+                    <div class="example-question" onclick="askQuestion(this.textContent)">
+                        What products are best for dry skin?
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <h3>Image Analysis</h3>
+                <p>You can also upload a photo, and I'll analyze your:</p>
+                <ul>
+                    <li>Face shape</li>
+                    <li>Skin type</li>
+                    <li>Current hairstyle</li>
+                    <li>And provide personalized recommendations!</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="chat-section">
+            <div class="action-buttons">
+                <button class="help-button" onclick="openModal()">
+                    <i class="fas fa-question-circle"></i> Help
+                </button>
+                <button class="reset-button" onclick="resetChat()">
+                    <i class="fas fa-redo"></i> Reset Chat
+                </button>
+            </div>
+            <div id="chat-container"></div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Ask me anything about beauty and grooming..." required>
+                <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
+            </form>
+        </div>
+
+        <div id="upload-section">
+            <h2>Image Analysis</h2>
+            <p>Upload a photo to analyze your gender, face shape and hair style</p>
+            
+            <div class="drag-area" onclick="document.getElementById('file-input').click()">
+                <input type="file" id="file-input" accept="image/*">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Drag & Drop</h3>
+                <p>or click to upload</p>
+            </div>
+
+            <div class="loading">
+                <i class="fas fa-spinner"></i>
+                <p>Analyzing image...</p>
+            </div>
+
+            <div id="preview-container">
+                <img id="image-preview" src="#" alt="Preview">
+                <img id="image-preview" src="#" alt="Preview" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        const loadingIndicator = document.querySelector('.loading');
+        const modal = document.getElementById('helpModal');
+
+        // Modal functions
+        function openModal() {
+            modal.style.display = "block";
+        }
+
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function askQuestion(question) {
+            messageInput.value = question;
+            messageForm.dispatchEvent(new Event('submit'));
+            closeModal();
+        }
+
+        async function resetChat() {
+            // Clear chat container
+            chatContainer.innerHTML = '';
+            
+            // Clear any uploaded image
+            imagePreview.style.display = 'none';
+            imagePreview.src = '#';
+            
+            // Reset the file input
+            fileInput.value = '';
+            
+            try {
+                // Reset chat state on backend
+                const response = await fetch('/chat/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    addMessage('Error: ' + data.error, false);
+                } else {
+                    addMessage(data.message, false);
+                }
+            } catch (error) {
+                addMessage('Error resetting chat', false);
+            }
+        }
+
+        function formatTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function addMessage(content, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'bot-message');
+            
+            const messageContent = document.createElement('div');
+            
+            // Check if content contains HTML (for formatted responses)
+            if (content.includes('<div class="analysis-message">') || content.includes('<div class="routine-steps">')) {
+                messageContent.innerHTML = content;
+            } else {
+                messageContent.textContent = content;
+            }
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.classList.add('message-time');
+            timeSpan.textContent = formatTime();
+            
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(timeSpan);
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            messageInput.value = '';
+
+            try {
+                const response = await fetch('/chat/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+
+                const data = await response.json();
+                if (data.error) {
+                    addMessage('Error: ' + data.error, false);
+                } else {
+                    addMessage(data.response, false);
+                }
+            } catch (error) {
+                addMessage('Error: Could not send message', false);
+            }
+        });
+
+        // Drag and drop functionality
+        const dragArea = document.querySelector('.drag-area');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dragArea.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dragArea.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dragArea.style.borderColor = '#2ecc71';
+            dragArea.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+        }
+
+        function unhighlight(e) {
+            dragArea.style.borderColor = '#3498db';
+            dragArea.style.backgroundColor = 'transparent';
+        }
+
+        dragArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            handleFiles(files);
+        }
+
+        fileInput.addEventListener('change', function(e) {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            const file = files[0];
+            if (file && file.type.startsWith('image/')) {
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    loadingIndicator.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+
+                // Upload and analyze
+                const formData = new FormData();
+                formData.append('image', file);
+
+                fetch('/analyze-image', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loadingIndicator.style.display = 'none';
+                    if (data.error) {
+                        addMessage('Error: ' + data.error, false);
+                    } else {
+                        // Create beautiful analysis message for chat
+                        const analysisHtml = `
+                            <div class="analysis-message">
+                                <h3>✨ Analysis Results</h3>
+                                
+                                <div class="analysis-section">
+                                    <h4>Personal Characteristics</h4>
+                                    <div class="analysis-detail">
+                                        <span class="detail-label">Gender</span>
+                                        <span class="detail-value">${data.gender}<span class="confidence">${data.gender_confidence} confidence</span></span>
+                                    </div>
+                                    <div class="analysis-detail">
+                                        <span class="detail-label">Face Shape</span>
+                                        <span class="detail-value">${data.face_shape}<span class="confidence">${data.face_confidence} confidence</span></span>
+                                    </div>
+                                    <div class="analysis-detail">
+                                        <span class="detail-label">Hair Style</span>
+                                        <span class="detail-value">${data.hair_style}<span class="confidence">${data.hair_confidence} confidence</span></span>
+                                    </div>
+                                    <div class="analysis-detail">
+                                        <span class="detail-label">Skin Type</span>
+                                        <span class="detail-value">${data.skin_type}<span class="confidence">${data.skin_confidence} confidence</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="analysis-section">
+                                    <h4>💆 Recommended Hairstyles</h4>
+                                    ${data.hairstyle_recommendations.map(rec => `
+                                        <div class="analysis-detail">
+                                            <span class="detail-label">${rec.style}</span>
+                                            <span class="detail-value">${rec.description}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+
+                                <div class="analysis-section">
+                                    <h4>✨ Recommended Products for ${data.skin_type} Skin</h4>
+                                    ${data.product_recommendations.map(product => `
+                                        <div class="product-card">
+                                            <div class="product-brand">${product.brand}</div>
+                                            <div class="product-name">${product.name}</div>
+                                            <div>
+                                                <span class="product-price">${product.price}</span>
+                                                <span class="product-rating">★ ${product.rating}</span>
+                                            </div>
+                                            <div class="product-ingredients">Key ingredients: ${product.key_ingredients}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                        
+                        const messageDiv = document.createElement('div');
+                        messageDiv.classList.add('message', 'bot-message');
+                        messageDiv.innerHTML = analysisHtml;
+                        chatContainer.appendChild(messageDiv);
+                        
+                        // Add follow-up question
+                        setTimeout(() => {
+                            addMessage("Would you like more specific advice about your hairstyle, skincare routine, or product recommendations?", false);
+                        }, 1000);
+                    }
+                })
+                .catch(error => {
+                    loadingIndicator.style.display = 'none';
+                    addMessage('Error analyzing image: ' + error, false);
+                });
+            }
+        }
+
+        // Initialize chat with welcome message
+        window.onload = function() {
+            resetChat();
+        };
+    </script>
+</body>
+</html>
