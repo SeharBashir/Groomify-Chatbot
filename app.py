@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask_cors import CORS
 import os
 from face_shape_model import FaceShapeDetector
 from hair_style_model import HairStyleDetector
@@ -8,6 +9,7 @@ from chatbot import GroomifyChat, UserState
 from product_recommender import ProductRecommender
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for React Native
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -134,5 +136,16 @@ def reset_chat():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Groomify AI Backend is running',
+        'version': '1.0.0'
+    }), 200
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    print("🚀 Starting Groomify AI Backend...")
+    print("📍 Server will be available at: http://localhost:5000")
+    print("📍 For React Native testing, use your IP address instead of localhost")
+    app.run(debug=True, host='0.0.0.0', port=5000)
