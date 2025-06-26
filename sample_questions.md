@@ -1,100 +1,92 @@
-# Groomify AI Assistant - Sample Questions & Commands
+# Groomify AI Assistant - Sample Questions Guide
 
 ## Basic Questions
 
 - Hello
 - Hi there
-- How are you?
 - What can you help me with?
-- What do you do?
-- Tell me about your features
+- What features do you have?
+- How does this work?
 
-## Complete One-Line Questions
+## One-Line Questions for Immediate Answers
 
 ### Hair Style Recommendations
 
 - What's the best hairstyle for a man with an oval face and wavy hair?
-- Can you recommend hairstyles for women with round faces and curly hair?
-- For men with square face and straight hair, what hairstyles look good?
-- What haircuts suit women with heart-shaped faces and long wavy hair?
-- Recommend hairstyles for men with kinky hair and round face
-- Show me hairstyles for women with oval face and dreadlocks
-- What are good haircuts for short straight hair and a square face?
-- Best hairstyles for women with thin hair and heart-shaped face?
+- Recommend hairstyles for women with round faces and curly hair
+- What hairstyles look good for men with square face and straight hair?
+- Suggest haircuts for women with heart-shaped faces and wavy hair
+- Hairstyles for men with kinky hair and round face?
+- Best haircuts for women with oval face and dreadlocks?
+- What hairstyles work for women with straight hair and a square face?
+- Good hairstyles for men with heart-shaped face and curly hair?
 
-### Skin Care Recommendations
+### Skin Care Questions
 
-- What's a good skincare routine for dry skin?
-- Recommend products for oily skin
-- How should I take care of combination skin?
-- What ingredients should I look for to treat acne?
-- Best moisturizer for sensitive dry skin?
-- What's a good night routine for aging skin?
-- How can I reduce dark spots on my face?
-- Products for hyperpigmentation on medium skin tone?
-- Best skincare routine for men with oily skin?
-- How to take care of dark skin in summer?
+- What's a good skincare routine for oily skin?
+- Recommend a skincare routine for dry skin
+- How should I take care of normal skin?
+- What's the best morning routine for oily skin?
+- Evening skincare routine for dry skin?
+- What products should I use for oily skin?
+- Recommend moisturizers for dry skin
+- What ingredients work best for oily skin?
+- Gentle cleansers for dry sensitive skin?
+- How many times should I wash oily skin per day?
 
-### Makeup Recommendations
+### Beauty & Grooming Questions
 
-- What makeup would suit my olive skin tone?
-- Best foundation for dry skin?
-- Eyeshadow colors for blue eyes?
-- Lipstick shades for dark skin?
-- How to do natural-looking makeup?
-- What's a good makeup routine for beginners?
-- Recommend products for a glowing makeup look
-- Best makeup brands for sensitive skin?
-- How to do eye makeup for hooded eyes?
-- Contouring tips for round faces?
-
-### Specific Beauty Problems
-
-- How to get rid of dark circles?
-- Best treatment for acne scars?
-- How to deal with frizzy hair?
-- Products for thinning hair?
-- How to minimize large pores?
-- Treatment for split ends?
-- How to prevent wrinkles?
-- Best solution for dry flaky scalp?
-- How to manage oily T-zone?
-- What causes hair loss and how to prevent it?
+- How often should I wash my hair?
+- How can I get rid of acne with oily skin?
+- What causes dry skin?
+- How to prevent oily skin?
+- Best way to care for wavy hair?
+- How to maintain curly hair?
+- What causes hair frizz?
+- Is it good to exfoliate oily skin?
+- Should I use toner with dry skin?
+- What sunscreen is best for oily skin?
 
 ## Multi-Step Questions
 
 ### Hair Style Information Collection
 
 - Step 1: What hairstyle would suit me?
-- Step 2 (if gender unknown): Are you looking for men's or women's hairstyles?
-- Step 3 (if face shape unknown): What's your face shape - round, oval, square, or heart-shaped?
-- Step 4 (if hair type unknown): What's your hair type - straight, wavy, curly, kinky, or dreadlocks?
+- Step 2: I'm a woman (or "I'm looking for men's hairstyles")
+- Step 3: I have an oval face
+- Step 4: I have wavy hair
 
 ### Skin Care Information Collection
 
 - Step 1: Can you recommend a skincare routine?
-- Step 2 (if skin type unknown): What's your skin type - dry, normal, or oily?
+- Step 2: I have oily skin (or dry/normal)
 
 ## Image Analysis Commands
 
-- Analyze my face shape
+- Analyze my photo
+- What's my face shape?
 - What's my skin type?
-- Tell me my hair type
-- What hairstyle would look good on me?
-- Recommend products based on my image
+- Recommend hairstyles based on my photo
+- What products would work for my skin?
 
-## Special Features
+## Helpful Commands
 
 - Reset chat
-- Show me sample questions
-- Help me with my beauty routine
-- I want to take a beauty questionnaire
-- Give me product recommendations
+- Help
+- Show sample questions
+- What can you analyze in my photo?
+- Give me product recommendations for oily skin
 
 ## Tips for Best Results
 
-- Be specific about your needs (e.g., "I have dry skin and need product recommendations")
-- Include key information in one-line questions (gender, face shape, hair type, skin type, etc.)
-- Upload a clear, well-lit face photo for most accurate analysis
-- Specify if you're looking for seasonal recommendations (summer/winter)
-- Mention your age group for more personalized advice
+- Always specify your gender, face shape and hair type for hairstyle recommendations
+- Clearly mention your skin type (dry, normal, or oily) when asking about skincare
+- For fastest results, include all relevant information in one question
+- Upload a clear, front-facing photo in good lighting for accurate analysis
+- If the bot asks for more information, provide exactly what is requested
+
+## Privacy Information
+
+- For your privacy and security, all uploaded images are automatically deleted after analysis
+- No personal data or images are stored on our servers
+- Analysis results are kept only for the duration of your chat session

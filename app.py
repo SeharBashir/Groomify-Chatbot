@@ -116,6 +116,14 @@ def analyze_image():
             'skin_tone': skin_tone
         }
         user_state.update_from_analysis(analysis_results)
+        
+        # Delete the image file after analysis for privacy and security
+        try:
+            if os.path.exists(filename):
+                os.remove(filename)
+                print(f"Successfully deleted image file: {filename}")
+        except Exception as delete_error:
+            print(f"Error deleting image file {filename}: {str(delete_error)}")
             
         return jsonify({
             'face_shape': face_shape,
@@ -126,9 +134,10 @@ def analyze_image():
             'gender_confidence': f"{gender_confidence:.2%}",
             'skin_type': skin_type,
             'skin_confidence': f"{skin_confidence:.2%}",
+            'skin_type_confidence': f"{skin_confidence:.2%}",
             'skin_tone': skin_tone,
             'skin_tone_confidence': f"{skin_tone_confidence:.2%}",
-            'image_path': filename,
+            # Don't return image_path since we've deleted the file
             'hairstyle_recommendations': hairstyle_recommendations,
             'product_recommendations': product_recommendations,
             'html_analysis': html_analysis
@@ -139,7 +148,12 @@ def analyze_image():
 
 @app.route('/uploads/<path:filename>')
 def serve_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    # Check if file exists, since we delete files after analysis
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        return jsonify({'error': 'Image no longer available'}), 404
 
 @app.route('/')
 def index():

@@ -829,6 +829,9 @@
                     if (data.error) {
                         addMessage('Error: ' + data.error, false);
                     } else {
+                        // Add a message about privacy
+                        addMessage("Your image has been analyzed and will be deleted from our server immediately for privacy.", false);
+                        
                         // Use the new HTML-formatted analysis if available
                         if (data.html_analysis) {
                             const messageDiv = document.createElement('div');
