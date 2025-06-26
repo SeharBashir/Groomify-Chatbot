@@ -4,6 +4,7 @@
     <title>Groomify AI Assistant</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css') }}">
     <style>
         * {
             box-sizing: border-box;
@@ -828,62 +829,74 @@
                     if (data.error) {
                         addMessage('Error: ' + data.error, false);
                     } else {
-                        // Create beautiful analysis message for chat
-                        const analysisHtml = `
-                            <div class="analysis-message">
-                                <h3>✨ Analysis Results</h3>
-                                
-                                <div class="analysis-section">
-                                    <h4>Personal Characteristics</h4>
-                                    <div class="analysis-detail">
-                                        <span class="detail-label">Gender</span>
-                                        <span class="detail-value">${data.gender}<span class="confidence">${data.gender_confidence} confidence</span></span>
-                                    </div>
-                                    <div class="analysis-detail">
-                                        <span class="detail-label">Face Shape</span>
-                                        <span class="detail-value">${data.face_shape}<span class="confidence">${data.face_confidence} confidence</span></span>
-                                    </div>
-                                    <div class="analysis-detail">
-                                        <span class="detail-label">Hair Style</span>
-                                        <span class="detail-value">${data.hair_style}<span class="confidence">${data.hair_confidence} confidence</span></span>
-                                    </div>
-                                    <div class="analysis-detail">
-                                        <span class="detail-label">Skin Type</span>
-                                        <span class="detail-value">${data.skin_type}<span class="confidence">${data.skin_confidence} confidence</span></span>
-                                    </div>
-                                </div>
-
-                                <div class="analysis-section">
-                                    <h4>💆 Recommended Hairstyles</h4>
-                                    ${data.hairstyle_recommendations.map(rec => `
+                        // Use the new HTML-formatted analysis if available
+                        if (data.html_analysis) {
+                            const messageDiv = document.createElement('div');
+                            messageDiv.classList.add('message', 'bot-message');
+                            messageDiv.innerHTML = data.html_analysis;
+                            chatContainer.appendChild(messageDiv);
+                        } else {
+                            // Fallback to old format with skin tone added
+                            const analysisHtml = `
+                                <div class="analysis-message">
+                                    <h3>✨ Analysis Results</h3>
+                                    
+                                    <div class="analysis-section">
+                                        <h4>Personal Characteristics</h4>
                                         <div class="analysis-detail">
-                                            <span class="detail-label">${rec.style}</span>
-                                            <span class="detail-value">${rec.description}</span>
+                                            <span class="detail-label">Gender</span>
+                                            <span class="detail-value">${data.gender}<span class="confidence">${data.gender_confidence} confidence</span></span>
                                         </div>
-                                    `).join('')}
-                                </div>
+                                        <div class="analysis-detail">
+                                            <span class="detail-label">Face Shape</span>
+                                            <span class="detail-value">${data.face_shape}<span class="confidence">${data.face_confidence} confidence</span></span>
+                                        </div>
+                                        <div class="analysis-detail">
+                                            <span class="detail-label">Hair Style</span>
+                                            <span class="detail-value">${data.hair_style}<span class="confidence">${data.hair_confidence} confidence</span></span>
+                                        </div>
+                                        <div class="analysis-detail">
+                                            <span class="detail-label">Skin Type</span>
+                                            <span class="detail-value">${data.skin_type}<span class="confidence">${data.skin_confidence} confidence</span></span>
+                                        </div>
+                                        <div class="analysis-detail">
+                                            <span class="detail-label">Skin Tone</span>
+                                            <span class="detail-value">${data.skin_tone}<span class="confidence">${data.skin_tone_confidence} confidence</span></span>
+                                        </div>
+                                    </div>
 
-                                <div class="analysis-section">
-                                    <h4>✨ Recommended Products for ${data.skin_type} Skin</h4>
-                                    ${data.product_recommendations.map(product => `
-                                        <div class="product-card">
-                                            <div class="product-brand">${product.brand}</div>
-                                            <div class="product-name">${product.name}</div>
-                                            <div>
-                                                <span class="product-price">${product.price}</span>
-                                                <span class="product-rating">★ ${product.rating}</span>
+                                    <div class="analysis-section">
+                                        <h4>💆 Recommended Hairstyles</h4>
+                                        ${data.hairstyle_recommendations.map(rec => `
+                                            <div class="analysis-detail">
+                                                <span class="detail-label">${typeof rec === 'string' ? rec : rec.style}</span>
+                                                <span class="detail-value">${typeof rec === 'string' ? 'Recommended for your features' : rec.description}</span>
                                             </div>
-                                            <div class="product-ingredients">Key ingredients: ${product.key_ingredients}</div>
-                                        </div>
-                                    `).join('')}
+                                        `).join('')}
+                                    </div>
+
+                                    <div class="analysis-section">
+                                        <h4>✨ Recommended Products for ${data.skin_type} Skin</h4>
+                                        ${data.product_recommendations.map(product => `
+                                            <div class="product-card">
+                                                <div class="product-brand">${product.brand || 'Beauty Brand'}</div>
+                                                <div class="product-name">${typeof product === 'string' ? product : product.name}</div>
+                                                <div>
+                                                    <span class="product-price">${product.price || '$25-50'}</span>
+                                                    <span class="product-rating">★ ${product.rating || '4.5'}</span>
+                                                </div>
+                                                <div class="product-ingredients">Key ingredients: ${product.key_ingredients || 'Natural extracts'}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        
-                        const messageDiv = document.createElement('div');
-                        messageDiv.classList.add('message', 'bot-message');
-                        messageDiv.innerHTML = analysisHtml;
-                        chatContainer.appendChild(messageDiv);
+                            `;
+                            
+                            const messageDiv = document.createElement('div');
+                            messageDiv.classList.add('message', 'bot-message');
+                            messageDiv.innerHTML = analysisHtml;
+                            chatContainer.appendChild(messageDiv);
+                        }
                         
                         // Add follow-up question
                         setTimeout(() => {

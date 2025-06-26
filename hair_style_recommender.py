@@ -107,4 +107,19 @@ def recommend_hairstyle(gender, face_shape, hair_type):
         list: A list of recommended hairstyles with descriptions.
     """
     recommendations = recommender.recommend_hairstyle(gender, face_shape, hair_type)
-    return [f"{rec['style']}: {rec['description']}" for rec in recommendations]
+    result = []
+    for rec in recommendations:
+        style = rec.get('style', '')
+        description = rec.get('description', '')
+        
+        # Skip empty or NaN style names
+        if pd.isna(style) or style == '':
+            continue
+            
+        # Format depending on whether description exists
+        if pd.isna(description) or description == '' or description == 'nan':
+            result.append(f"{style}")
+        else:
+            result.append(f"{style}: {description}")
+    
+    return result
