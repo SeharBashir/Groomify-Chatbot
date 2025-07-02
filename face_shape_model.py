@@ -10,12 +10,13 @@ class FaceShapeModel(nn.Module):
         backbone = resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
         self.features = nn.Sequential(*list(backbone.children())[:-1])
         feat_dim = backbone.fc.in_features
+        self.gender_head = nn.Linear(feat_dim, 2)  # Gender classification
         self.shape_head = nn.Linear(feat_dim, num_shape_classes)
         
     def forward(self, x):
         x = self.features(x)
         x = x.view(x.size(0), -1)
-        return self.shape_head(x)
+        return self.gender_head(x), self.shape_head(x)
 
 class FaceShapeDetector:
     def __init__(self, model_path, device='cuda' if torch.cuda.is_available() else 'cpu'):
@@ -33,14 +34,15 @@ class FaceShapeDetector:
         ])
 
         self.shape_classes = ['Heart', 'Oblong', 'Oval', 'Round', 'Square']
+        self.gender_classes = ['Male', 'Female']
 
     def detect_face_shape(self, image_path):
         """
-        Detect face shape from an image file
+        Detect face shape and gender from an image file
         Args:
             image_path: Path to the image file
         Returns:
-            str: Predicted face shape
+            tuple: (face_shape, face_confidence, gender, gender_confidence)
         """
         # Load and preprocess image
         image = Image.open(image_path).convert('RGB')
@@ -48,11 +50,18 @@ class FaceShapeDetector:
 
         # Get prediction
         with torch.no_grad():
-            shape_out = self.model(image_tensor)
-            # Apply softmax to get probabilities
-            probabilities = torch.softmax(shape_out, dim=1)
-            pred_idx = probabilities.argmax(1).item()
-            confidence = probabilities[0][pred_idx].item()
-            shape_pred = self.shape_classes[pred_idx]
+            gender_out, shape_out = self.model(image_tensor)
+            
+            # Process gender prediction
+            gender_probabilities = torch.softmax(gender_out, dim=1)
+            gender_pred_idx = gender_probabilities.argmax(1).item()
+            gender_confidence = gender_probabilities[0][gender_pred_idx].item()
+            gender_pred = self.gender_classes[gender_pred_idx]
+            
+            # Process shape prediction
+            shape_probabilities = torch.softmax(shape_out, dim=1)
+            shape_pred_idx = shape_probabilities.argmax(1).item()
+            shape_confidence = shape_probabilities[0][shape_pred_idx].item()
+            shape_pred = self.shape_classes[shape_pred_idx]
 
-        return shape_pred, confidence
+        return shape_pred, shape_confidence, gender_pred, gender_confidence

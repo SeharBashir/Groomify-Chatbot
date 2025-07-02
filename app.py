@@ -67,9 +67,9 @@ def analyze_image():
         file.save(filename)
         
         # Get predictions using our detector classes
-        face_shape, face_confidence = face_detector.detect_face_shape(filename)
+        face_shape, face_confidence, gender, gender_confidence = face_detector.detect_face_shape(filename)
         hair_style, hair_confidence = hair_detector.detect_hair_style(filename)
-        gender, gender_confidence = gender_detector.detect_gender(filename)
+        # gender, gender_confidence = gender_detector.detect_gender(filename)  # Now using face shape model for gender
         skin_type, skin_confidence = skin_detector.detect_skin_type(filename)
         skin_tone, skin_tone_confidence = skin_tone_detector.detect_skin_tone(filename)
         
