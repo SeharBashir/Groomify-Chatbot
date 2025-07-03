@@ -73,18 +73,18 @@ def analyze_image():
         skin_type, skin_confidence = skin_detector.detect_skin_type(filename)
         skin_tone, skin_tone_confidence = skin_tone_detector.detect_skin_tone(filename)
         
-        # Get hairstyle recommendations
+        # Get hairstyle recommendations (but don't include in response - will be available on request)
         hairstyle_recommendations = chatbot.hairstyle_recommender.recommend_hairstyle(
             gender=gender,
             face_shape=face_shape,
             hair_type=hair_style
         )
         
-        # Get product recommendations based on skin type
+        # Get product recommendations (but don't include in response - will be available on request)
         product_recommendations = product_recommender.recommend_products(skin_type)
 
-        # Prepare full analysis data for HTML formatting
-        full_analysis_data = {
+        # Prepare basic analysis data for HTML formatting (no recommendations)
+        basic_analysis_data = {
             'face_shape': face_shape,
             'face_confidence': f"{face_confidence:.2%}",
             'hair_style': hair_style,
@@ -94,13 +94,11 @@ def analyze_image():
             'skin_type': skin_type,
             'skin_confidence': f"{skin_confidence:.2%}",
             'skin_tone': skin_tone,
-            'skin_tone_confidence': f"{skin_tone_confidence:.2%}",
-            'hairstyle_recommendations': hairstyle_recommendations,
-            'product_recommendations': product_recommendations
+            'skin_tone_confidence': f"{skin_tone_confidence:.2%}"
         }
         
-        # Generate HTML formatted analysis
-        html_analysis = chatbot.format_analysis_result_html(full_analysis_data)
+        # Generate HTML formatted analysis (basic info only)
+        html_analysis = chatbot.format_analysis_result_html(basic_analysis_data)
         
         # Update chatbot state with analysis results
         user_id = request.args.get('user_id', 'anonymous')
@@ -110,7 +108,7 @@ def analyze_image():
         user_state = chatbot.user_states[user_id]
         analysis_results = {
             'face_shape': face_shape,
-            'hair_style': hair_style,
+            'hair_style': hair_style,  # Store as hair_style to match model output
             'gender': gender,
             'skin_type': skin_type,
             'skin_tone': skin_tone
@@ -137,10 +135,8 @@ def analyze_image():
             'skin_type_confidence': f"{skin_confidence:.2%}",
             'skin_tone': skin_tone,
             'skin_tone_confidence': f"{skin_tone_confidence:.2%}",
-            # Don't return image_path since we've deleted the file
-            'hairstyle_recommendations': hairstyle_recommendations,
-            'product_recommendations': product_recommendations,
             'html_analysis': html_analysis
+            # Note: Recommendations removed - use separate intents to get them
         })
         
     except Exception as e:

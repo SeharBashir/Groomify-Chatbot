@@ -13,9 +13,7 @@ class UserState:
         """Update user state with analysis results from image processing"""
         self.collected_info.update(analysis_results)
         self.last_analysis = datetime.utcnow().isoformat()
-        # Reset context since we now have the information
-        if self.context in ['collecting_skin_info', 'collecting_hair_info']:
-            self.context = None
+        # Keep context and data - only reset on explicit chat reset
 
 class GroomifyChat:
     def __init__(self):
@@ -35,8 +33,16 @@ class GroomifyChat:
         self.BEAUTY_INTENTS = {
             "greeting": ["hello", "hi", "hey", "greetings"],
             "hairstyle": ["hairstyle", "haircut", "hair", "hairstyles", "haircuts"],
-            "skincare": ["skin", "skincare", "face", "complexion", "skin type", "skin care"],
-            "makeup": ["makeup", "cosmetics", "lipstick"]
+            "skincare": ["skincare routine", "skin care routine", "skincare advice", "skin care advice", "skincare", "skin care", "routine for skin"],
+            "makeup": ["makeup", "cosmetics", "lipstick"],
+            "hair_recommendation": ["hair recommendation", "hair suggest", "recommend hair", "suggest hairstyle", "hair advice", "what hairstyle", "hairstyle recommendation", "hairstyle suggest", "suggest me hair", "suggest hair", "hair style recommendation", "recommend hairstyle", "suggest me hairstyle"],
+            "product_recommendation": ["product recommendation", "cosmetic recommendation", "recommend products", "suggest products", "product advice", "cosmetic advice", "product suggest", "cosmetics recommendation"],
+            # Personal information queries - these should be checked first
+            "ask_gender": ["what is my gender", "what gender am i", "my gender", "tell me my gender", "what gender", "am i male or female", "gender"],
+            "ask_face_shape": ["what is my face shape", "what face shape am i", "my face shape", "tell me my face shape", "what face shape", "face shape"],
+            "ask_skin_tone": ["what is my skin tone", "what skin tone am i", "my skin tone", "tell me my skin tone", "what skin tone", "skin tone"],
+            "ask_skin_type": ["what is my skin type", "what skin type am i", "my skin type", "tell me my skin type", "what skin type", "skin type"],
+            "ask_hair_type": ["what is my hair type", "what hair type am i", "my hair type", "tell me my hair type", "what hair type", "hair type"]
         }
         
         # Skin type keywords for NLP
@@ -392,10 +398,45 @@ Would you like product recommendations for oil control?"""
 
     def detect_intent(self, text):
         """Detect the intent from user's message"""
-        text = text.lower()
+        text = text.lower().strip()
+        
+        # Check personal information questions first (highest priority) - use more precise matching
+        personal_intents = ["ask_gender", "ask_face_shape", "ask_skin_tone", "ask_skin_type", "ask_hair_type"]
+        for intent in personal_intents:
+            keywords = self.BEAUTY_INTENTS[intent]
+            # Only match if it's clearly asking about personal info (starts with "what", "my", "tell me")
+            for keyword in keywords:
+                if (keyword.startswith("what") and keyword in text) or \
+                   (keyword.startswith("my") and text.startswith(keyword)) or \
+                   (keyword.startswith("tell me") and keyword in text) or \
+                   (text == keyword):  # Exact match for single words like "gender"
+                    return intent
+        
+        # Check if it's a hair recommendation request
+        hair_rec_keywords = ["suggest me hair", "suggest hair", "hair recommendation", "recommend hair", "hair advice"]
+        if any(keyword in text for keyword in hair_rec_keywords):
+            return "hair_recommendation"
+            
+        # Check if it's a product recommendation request  
+        product_rec_keywords = ["product recommendation", "cosmetic recommendation", "recommend products", "suggest products"]
+        if any(keyword in text for keyword in product_rec_keywords):
+            return "product_recommendation"
+        
+        # Check for hairstyle questions (like "hair style for men...")
+        hairstyle_keywords = ["hair style for", "hairstyle for", "haircut for", "hair for"]
+        if any(keyword in text for keyword in hairstyle_keywords):
+            return "hairstyle"
+            
+        # Check for skincare routine requests
+        skincare_keywords = ["skincare routine", "skin care routine", "skincare advice", "skin care advice"]
+        if any(keyword in text for keyword in skincare_keywords):
+            return "skincare"
+        
+        # Then check other general intents
         for intent, keywords in self.BEAUTY_INTENTS.items():
-            if any(keyword in text for keyword in keywords):
-                return intent
+            if intent not in personal_intents and intent not in ["hair_recommendation", "product_recommendation"]:
+                if any(keyword in text for keyword in keywords):
+                    return intent
         return "unknown"
 
     def generate_hairstyle_response(self, user_state):
@@ -448,7 +489,7 @@ Would you like product recommendations for oil control?"""
         return response
 
     def format_analysis_result_html(self, analysis_data):
-        """Format image analysis results as HTML for better presentation"""
+        """Format image analysis results as HTML - showing only basic analysis"""
         
         html = f"""
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 100%; margin: 0 auto; padding: 8px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); overflow: hidden;">
@@ -479,7 +520,7 @@ Would you like product recommendations for oil control?"""
                 <div style="display: flex; gap: 8px; width: 100%;">
                     <div style="flex: 1; background: white; border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
                         <div style="font-size: 20px; margin-bottom: 4px;">💇</div>
-                        <h3 style="color: #00665C; font-size: 11px; font-weight: 600; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Hair Style</h3>
+                        <h3 style="color: #00665C; font-size: 11px; font-weight: 600; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px;">Hair Type</h3>
                         <p style="color: #333; font-size: 13px; font-weight: bold; margin: 2px 0; text-transform: capitalize;">{analysis_data.get('hair_style', 'Unknown')}</p>
                         <p style="color: #666; font-size: 9px; margin: 2px 0 0 0; font-weight: 500;">{analysis_data.get('hair_confidence', 'N/A')}</p>
                     </div>
@@ -500,143 +541,9 @@ Would you like product recommendations for oil control?"""
                     <p style="color: #666; font-size: 9px; margin: 2px 0 0 0; font-weight: 500;">{analysis_data.get('skin_tone_confidence', 'N/A')}</p>
                 </div>
             </div>
-        """
-        
-        # Add hairstyle recommendations
-        hairstyle_recs = analysis_data.get('hairstyle_recommendations', [])
-        if hairstyle_recs:
-            html += """
-            <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                <h3 style="color: #00665C; font-size: 14px; font-weight: bold; margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center;"><span style="margin-right: 6px;">💡</span> Recommended Hairstyles</h3>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-            """
             
-            for idx, style in enumerate(hairstyle_recs, 1):
-                # Skip any empty or 'nan' values
-                if style == 'nan' or style == '' or not style:
-                    continue
-                    
-                if isinstance(style, dict):
-                    style_name = style.get('style', '')
-                    style_desc = style.get('description', '')
-                    
-                    # Skip if style name is empty or nan
-                    if not style_name or style_name == 'nan' or style_name == '':
-                        continue
-                    
-                    html += f"""
-                        <div style="padding: 8px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #00665C;">
-                            <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                                <span style="background: #00665C; color: white; font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0;">{idx}</span>
-                                <span style="color: #333; font-size: 13px; font-weight: 600;">{style_name}</span>
-                            </div>
-                    """
-                    
-                    # Only add description if it's valid (not empty or nan)
-                    if style_desc and style_desc != 'nan' and style_desc != '':
-                        html += f"""
-                            <p style="color: #666; font-size: 11px; margin: 0 0 0 26px; line-height: 1.3;">{style_desc}</p>
-                        """
-                    
-                    html += """
-                        </div>
-                    """
-                else:
-                    # For string style names, filter out 'nan' or empty values
-                    if isinstance(style, str):
-                        # Split to handle formats like "Style: Description"
-                        style_parts = style.split(':', 1)
-                        style_name = style_parts[0].strip()
-                        
-                        # Skip if style name is empty or nan
-                        if not style_name or style_name == 'nan' or style_name == '':
-                            continue
-                            
-                        html += f"""
-                            <div style="display: flex; align-items: center; padding: 8px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #00665C;">
-                                <span style="background: #00665C; color: white; font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0;">{idx}</span>
-                                <span style="color: #333; font-size: 13px; font-weight: 500;">{style_name}</span>
-                        """
-                        
-                        # If description exists in the string, add it
-                        if len(style_parts) > 1 and style_parts[1].strip() and style_parts[1].strip() != 'nan':
-                            html += f"""
-                                <p style="color: #666; font-size: 11px; margin: 8px 0 0 26px; line-height: 1.3;">{style_parts[1].strip()}</p>
-                            """
-                            
-                        html += """
-                            </div>
-                        """
-            html += "</div></div>"
-        
-        # Add product recommendations
-        product_recs = analysis_data.get('product_recommendations', [])
-        if product_recs:
-            html += """
-            <div style="background: white; border-radius: 10px; padding: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                <h3 style="color: #00665C; font-size: 14px; font-weight: bold; margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center;"><span style="margin-right: 6px;">🛍️</span> Recommended Products</h3>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-            """
-            
-            for idx, product in enumerate(product_recs[:5], 1):
-                if isinstance(product, dict):
-                    product_name = product.get('name', 'Unknown Product')
-                    product_brand = product.get('brand', '')
-                    product_price = product.get('price', '')
-                    product_rating = product.get('rating', '')
-                    
-                    html += f"""
-                        <div style="padding: 8px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #00665C;">
-                    """
-                    
-                    if product_brand:
-                        html += f"""
-                            <div style="color: #00665C; font-size: 10px; font-weight: 500; margin-bottom: 2px;">{product_brand}</div>
-                        """
-                    
-                    html += f"""
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <div style="display: flex; align-items: center;">
-                                    <span style="background: #00665C; color: white; font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0;">{idx}</span>
-                                    <span style="color: #333; font-size: 13px; font-weight: 500;">{product_name}</span>
-                                </div>
-                    """
-                    
-                    if product_price or product_rating:
-                        html += f"""
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                        """
-                        
-                        if product_price:
-                            html += f"""
-                                    <span style="color: #27ae60; font-size: 11px; font-weight: 600;">{product_price}</span>
-                            """
-                        
-                        if product_rating:
-                            html += f"""
-                                    <span style="color: #f39c12; font-size: 11px; font-weight: 600;">★ {product_rating}</span>
-                            """
-                        
-                        html += """
-                                </div>
-                        """
-                    
-                    html += """
-                            </div>
-                        </div>
-                    """
-                else:
-                    html += f"""
-                        <div style="display: flex; align-items: center; padding: 8px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #00665C;">
-                            <span style="background: #00665C; color: white; font-weight: bold; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px; flex-shrink: 0;">{idx}</span>
-                            <span style="color: #333; font-size: 13px; font-weight: 500;">{product}</span>
-                        </div>
-                    """
-            html += "</div></div>"
-        
-        html += """
             <div style="text-align: center; background: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                <p style="color: #00665C; font-size: 13px; font-weight: 600; margin: 0;">✨ Ask me for more specific advice!</p>
+                <p style="color: #00665C; font-size: 13px; font-weight: 600; margin: 0;">✨ Ask for "hair recommendation" or "product recommendation" for personalized suggestions!</p>
             </div>
         </div>
         """
@@ -699,7 +606,7 @@ Would you like product recommendations for oil control?"""
                 elif user_state.last_question == 'hair_type':
                     hair_type = self.get_hair_type_from_text(message_text)
                     if hair_type:
-                        user_state.collected_info['hair_type'] = hair_type
+                        user_state.collected_info['hair_style'] = hair_type  # Store as hair_style for consistency
                     else:
                         return {
                             'intent': intent,
@@ -714,43 +621,43 @@ Would you like product recommendations for oil control?"""
                     response = "Hello! How can I help you with your beauty questions today?"
                     
                 elif intent == "skincare":
-                    # Try to parse skin type from the current message using our enhanced parser
-                    parsed_skin_info = self.parse_skincare_question(message_text)
-                    
-                    # If we extracted skin type from the message
-                    if 'skin_type' in parsed_skin_info:
-                        skin_type = parsed_skin_info['skin_type']
-                        user_state.collected_info['skin_type'] = skin_type  # Save for future use
-                        
-                        # Prepare custom response if we found specific concerns
-                        concern_intro = ""
-                        if 'concerns' in parsed_skin_info and parsed_skin_info['concerns']:
-                            concerns_list = ", ".join(parsed_skin_info['concerns'])
-                            concern_intro = f"I see you're concerned about {concerns_list}. "
-                        
-                        routine = self.SKINCARE_ADVICE[skin_type]['routine']
-                        tips = self.SKINCARE_ADVICE[skin_type]['tips']
-                        response = f"{concern_intro}Based on your {skin_type} skin type, here are my recommendations:\n\n{routine}\n\n{tips}"
-                    
-                    # If no skin type in message but we know it from before
-                    elif 'skin_type' in user_state.collected_info:
+                    # Check if we have user's skin type from analysis data first
+                    if 'skin_type' in user_state.collected_info:
                         skin_type = user_state.collected_info['skin_type']
                         routine = self.SKINCARE_ADVICE[skin_type]['routine']
                         tips = self.SKINCARE_ADVICE[skin_type]['tips']
-                        response = f"Based on your {skin_type} skin type, here are my recommendations:\n\n{routine}\n\n{tips}"
-                    
-                    # If we don't have the skin type, ask for it
+                        response = f"Based on your {skin_type} skin type (from your analysis), here are my recommendations:\n\n{routine}\n\n{tips}"
                     else:
-                        user_state.context = "collecting_skin_info"
-                        response = "I'll help you with skincare advice! Please tell me your skin type - is it dry, normal, or oily? For example, 'I have oily skin' or 'My skin is dry'."
-                        user_state.last_question = 'skin_type'
+                        # Try to parse skin type from the current message using our enhanced parser
+                        parsed_skin_info = self.parse_skincare_question(message_text)
+                        
+                        # If we extracted skin type from the message
+                        if 'skin_type' in parsed_skin_info:
+                            skin_type = parsed_skin_info['skin_type']
+                            user_state.collected_info['skin_type'] = skin_type  # Save for future use
+                            
+                            # Prepare custom response if we found specific concerns
+                            concern_intro = ""
+                            if 'concerns' in parsed_skin_info and parsed_skin_info['concerns']:
+                                concerns_list = ", ".join(parsed_skin_info['concerns'])
+                                concern_intro = f"I see you're concerned about {concerns_list}. "
+                            
+                            routine = self.SKINCARE_ADVICE[skin_type]['routine']
+                            tips = self.SKINCARE_ADVICE[skin_type]['tips']
+                            response = f"{concern_intro}Based on your {skin_type} skin type, here are my recommendations:\n\n{routine}\n\n{tips}"
+                        
+                        # If we don't have the skin type, ask for it
+                        else:
+                            user_state.context = "collecting_skin_info"
+                            response = "I'll help you with skincare advice! Please tell me your skin type - is it dry, normal, or oily? For example, 'I have oily skin' or 'My skin is dry'."
+                            user_state.last_question = 'skin_type'
                         
                 elif intent == "hairstyle":
-                    # Check if we can parse a one-line hairstyle question first
+                    # First try to parse new information from the current message
                     parsed_info = self.parse_one_line_hairstyle_question(message_text)
                     print(f"Parsed hairstyle info: {parsed_info}")
                     
-                    # If we have all the information needed, generate recommendations directly
+                    # If we have complete information in the message, use it directly
                     if 'gender' in parsed_info and 'face_shape' in parsed_info and 'hair_type' in parsed_info:
                         # Use the extracted information to get recommendations
                         recommendations = self.hairstyle_recommender.recommend_hairstyle(
@@ -792,10 +699,58 @@ Would you like product recommendations for oil control?"""
                                     else:
                                         response += "\n\n"
                         
-                        # Store the information for future use
-                        user_state.collected_info.update(parsed_info)
+                        # Store the new information for future use - standardize hair_type to hair_style
+                        stored_info = parsed_info.copy()
+                        if 'hair_type' in stored_info:
+                            stored_info['hair_style'] = stored_info.pop('hair_type')
+                        user_state.collected_info.update(stored_info)
                         
-                        # No need to set context since we've already generated recommendations
+                    # If no complete info in message, check if we have saved analysis data
+                    elif ('gender' in user_state.collected_info and 
+                          'face_shape' in user_state.collected_info and 
+                          ('hair_style' in user_state.collected_info or 'hair_type' in user_state.collected_info)):
+                        
+                        # Get hair type - prefer hair_style, fall back to hair_type
+                        hair_type = user_state.collected_info.get('hair_style') or user_state.collected_info.get('hair_type')
+                        
+                        # Get recommendations using saved analysis data
+                        recommendations = self.hairstyle_recommender.recommend_hairstyle(
+                            gender=user_state.collected_info['gender'],
+                            face_shape=user_state.collected_info['face_shape'],
+                            hair_type=hair_type
+                        )
+                        
+                        # Filter out empty or 'nan' recommendations
+                        valid_recommendations = []
+                        for rec in recommendations:
+                            if isinstance(rec, dict):
+                                if rec.get('style') and rec.get('style') != 'nan':
+                                    valid_recommendations.append(rec)
+                            elif rec and rec != 'nan':
+                                valid_recommendations.append(rec)
+                        
+                        if valid_recommendations:
+                            response = f"Based on your analysis data (Gender: {user_state.collected_info['gender']}, Face Shape: {user_state.collected_info['face_shape']}, Hair Type: {hair_type}), here are my hairstyle recommendations:\n\n"
+                            
+                            for idx, rec in enumerate(valid_recommendations, 1):
+                                if isinstance(rec, dict):
+                                    style = rec.get('style', '')
+                                    description = rec.get('description', '')
+                                    
+                                    if description and description != 'nan':
+                                        response += f"{idx}. {style}: {description}\n\n"
+                                    else:
+                                        response += f"{idx}. {style}\n\n"
+                                else:
+                                    # Handle string format
+                                    parts = rec.split(':', 1)
+                                    response += f"{idx}. {parts[0].strip()}"
+                                    if len(parts) > 1:
+                                        response += f": {parts[1].strip()}\n\n"
+                                    else:
+                                        response += "\n\n"
+                        else:
+                            response = "I couldn't find specific hairstyle recommendations for your profile."
                     else:
                         # Start collecting hairstyle information
                         user_state.context = "collecting_hair_info"
@@ -818,8 +773,118 @@ Would you like product recommendations for oil control?"""
                 elif intent == "makeup":
                     response = "What kind of makeup advice are you looking for? I can help with color selection and application tips."
                     
+                elif intent == "hair_recommendation":
+                    # Check if we have user's analysis data - check both hair_style and hair_type for compatibility
+                    hair_info_available = ('hair_style' in user_state.collected_info or 'hair_type' in user_state.collected_info)
+                    
+                    if ('gender' in user_state.collected_info and 
+                        'face_shape' in user_state.collected_info and 
+                        hair_info_available):
+                        
+                        # Get hair type - prefer hair_style, fall back to hair_type
+                        hair_type = user_state.collected_info.get('hair_style') or user_state.collected_info.get('hair_type')
+                        
+                        # Get recommendations using saved analysis data
+                        recommendations = self.hairstyle_recommender.recommend_hairstyle(
+                            gender=user_state.collected_info['gender'],
+                            face_shape=user_state.collected_info['face_shape'],
+                            hair_type=hair_type
+                        )
+                        
+                        # Filter out empty or 'nan' recommendations
+                        valid_recommendations = []
+                        for rec in recommendations:
+                            if isinstance(rec, dict):
+                                if rec.get('style') and rec.get('style') != 'nan':
+                                    valid_recommendations.append(rec)
+                            elif rec and rec != 'nan':
+                                valid_recommendations.append(rec)
+                        
+                        if valid_recommendations:
+                            response = f"Based on your analysis data (Gender: {user_state.collected_info['gender']}, Face Shape: {user_state.collected_info['face_shape']}, Hair Type: {hair_type}), here are my hairstyle recommendations:\n\n"
+                            
+                            for idx, rec in enumerate(valid_recommendations, 1):
+                                if isinstance(rec, dict):
+                                    style = rec.get('style', '')
+                                    description = rec.get('description', '')
+                                    
+                                    if description and description != 'nan':
+                                        response += f"{idx}. {style}: {description}\n\n"
+                                    else:
+                                        response += f"{idx}. {style}\n\n"
+                                else:
+                                    # Handle string format
+                                    parts = rec.split(':', 1)
+                                    response += f"{idx}. {parts[0].strip()}"
+                                    if len(parts) > 1:
+                                        response += f": {parts[1].strip()}\n\n"
+                                    else:
+                                        response += "\n\n"
+                        else:
+                            response = "I couldn't find specific hairstyle recommendations for your profile. Please try uploading an image first for analysis."
+                    else:
+                        response = "I need your analysis data first. Please upload an image so I can analyze your features and provide personalized hairstyle recommendations."
+                
+                elif intent == "product_recommendation":
+                    # Check if we have user's skin type from analysis
+                    if 'skin_type' in user_state.collected_info:
+                        from product_recommender import ProductRecommender
+                        product_recommender = ProductRecommender('datasets/cosmetics.csv')
+                        
+                        # Get product recommendations based on skin type
+                        product_recommendations = product_recommender.recommend_products(user_state.collected_info['skin_type'])
+                        
+                        if product_recommendations:
+                            response = f"Based on your {user_state.collected_info['skin_type']} skin type, here are my cosmetic product recommendations:\n\n"
+                            
+                            for idx, product in enumerate(product_recommendations[:5], 1):
+                                product_name = product.get('name', 'Unknown Product')
+                                product_brand = product.get('brand', '')
+                                product_price = product.get('price', '')
+                                
+                                response += f"{idx}. {product_brand} - {product_name}"
+                                if product_price:
+                                    response += f" ({product_price})"
+                                response += "\n"
+                        else:
+                            response = "I couldn't find specific product recommendations for your skin type."
+                    else:
+                        response = "I need your skin type analysis first. Please upload an image so I can analyze your skin and provide personalized product recommendations."
+                
+                elif intent == "ask_gender":
+                    if 'gender' in user_state.collected_info:
+                        response = f"Based on your analysis, your gender is: **{user_state.collected_info['gender']}**"
+                    else:
+                        response = "I don't have your gender information yet. Please upload an image so I can analyze your features and determine your gender."
+                
+                elif intent == "ask_face_shape":
+                    if 'face_shape' in user_state.collected_info:
+                        response = f"Based on your analysis, your face shape is: **{user_state.collected_info['face_shape'].title()}**"
+                    else:
+                        response = "I don't have your face shape information yet. Please upload an image so I can analyze your facial features and determine your face shape."
+                
+                elif intent == "ask_skin_tone":
+                    if 'skin_tone' in user_state.collected_info:
+                        response = f"Based on your analysis, your skin tone is: **{user_state.collected_info['skin_tone'].title()}**"
+                    else:
+                        response = "I don't have your skin tone information yet. Please upload an image so I can analyze your skin and determine your skin tone."
+                
+                elif intent == "ask_skin_type":
+                    if 'skin_type' in user_state.collected_info:
+                        response = f"Based on your analysis, your skin type is: **{user_state.collected_info['skin_type'].title()}**"
+                    else:
+                        response = "I don't have your skin type information yet. Please upload an image so I can analyze your skin and determine your skin type."
+                
+                elif intent == "ask_hair_type":
+                    # Check both hair_style and hair_type keys for compatibility
+                    hair_type = user_state.collected_info.get('hair_style') or user_state.collected_info.get('hair_type')
+                    if hair_type:
+                        response = f"Based on your analysis, your hair type is: **{hair_type.title()}**"
+                    else:
+                        response = "I don't have your hair type information yet. Please upload an image so I can analyze your hair and determine your hair type."
+                    
                 else:
-                    response = "I'm not sure what you're asking about. I can help with hairstyles, skincare, or makeup advice. What would you like to know?"
+                    response = "I'm not sure what you're asking about. I can help with hairstyles, skincare, makeup advice, hair recommendations, or product recommendations. What would you like to know?"
 
             return {
                 'intent': intent,
