@@ -53,10 +53,10 @@ class FaceShapeDetector:
             gender_out, shape_out = self.model(image_tensor)
             
             # Process gender prediction
-            gender_probabilities = torch.softmax(gender_out, dim=1)
-            gender_pred_idx = gender_probabilities.argmax(1).item()
-            gender_confidence = gender_probabilities[0][gender_pred_idx].item()
-            gender_pred = self.gender_classes[gender_pred_idx]
+            # gender_probabilities = torch.softmax(gender_out, dim=1)
+            # gender_pred_idx = gender_probabilities.argmax(1).item()
+            # gender_confidence = gender_probabilities[0][gender_pred_idx].item()
+            # gender_pred = self.gender_classes[gender_pred_idx]
             
             # Process shape prediction
             shape_probabilities = torch.softmax(shape_out, dim=1)
@@ -64,4 +64,5 @@ class FaceShapeDetector:
             shape_confidence = shape_probabilities[0][shape_pred_idx].item()
             shape_pred = self.shape_classes[shape_pred_idx]
 
-        return shape_pred, shape_confidence, gender_pred, gender_confidence
+        # return shape_pred, shape_confidence, gender_pred, gender_confidence
+        return shape_pred, shape_confidence

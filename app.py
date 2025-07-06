@@ -17,7 +17,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # Initialize models and chatbot
 face_detector = FaceShapeDetector('models/face_shape_model.pth')
 hair_detector = HairStyleDetector('models/hair_style_model.pth')
-gender_detector = GenderDetector('models/gender_detection_model.pth')
+gender_detector = GenderDetector() 
 skin_detector = SkinTypeDetector('models/skin_type_model.pth')
 skin_tone_detector = SkinToneDetector('models/skintone_detection_model.pt')
 product_recommender = ProductRecommender('datasets/cosmetics.csv')
@@ -55,6 +55,7 @@ def handle_message():
 @app.route('/analyze-image', methods=['POST'])
 def analyze_image():
     try:
+        print("here")
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
             
@@ -67,9 +68,12 @@ def analyze_image():
         file.save(filename)
         
         # Get predictions using our detector classes
-        face_shape, face_confidence, gender, gender_confidence = face_detector.detect_face_shape(filename)
+        face_shape, face_confidence = face_detector.detect_face_shape(filename)
+        print(face_shape, face_confidence)
         hair_style, hair_confidence = hair_detector.detect_hair_style(filename)
-        # gender, gender_confidence = gender_detector.detect_gender(filename)  # Now using face shape model for gender
+        print(hair_style, hair_confidence)
+        gender, gender_confidence = gender_detector.detect_gender(filename)  # Using dedicated gender detection model
+        print(gender, gender_confidence)
         skin_type, skin_confidence = skin_detector.detect_skin_type(filename)
         skin_tone, skin_tone_confidence = skin_tone_detector.detect_skin_tone(filename)
         

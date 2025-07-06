@@ -1,6 +1,7 @@
 import spacy
 from datetime import datetime
 from hair_style_recommender import HairstyleRecommender
+from intents import BEAUTY_INTENTS, SKIN_TYPES, FACE_SHAPES, HAIR_TYPES
 
 class UserState:
     def __init__(self):
@@ -29,45 +30,11 @@ class GroomifyChat:
         self.hairstyle_recommender = HairstyleRecommender()
         self.user_states = {}
 
-        # Basic intents
-        self.BEAUTY_INTENTS = {
-            "greeting": ["hello", "hi", "hey", "greetings"],
-            "hairstyle": ["hairstyle", "haircut", "hair", "hairstyles", "haircuts"],
-            "skincare": ["skincare routine", "skin care routine", "skincare advice", "skin care advice", "skincare", "skin care", "routine for skin"],
-            "makeup": ["makeup", "cosmetics", "lipstick"],
-            "hair_recommendation": ["hair recommendation", "hair suggest", "recommend hair", "suggest hairstyle", "hair advice", "what hairstyle", "hairstyle recommendation", "hairstyle suggest", "suggest me hair", "suggest hair", "hair style recommendation", "recommend hairstyle", "suggest me hairstyle"],
-            "product_recommendation": ["product recommendation", "cosmetic recommendation", "recommend products", "suggest products", "product advice", "cosmetic advice", "product suggest", "cosmetics recommendation"],
-            # Personal information queries - these should be checked first
-            "ask_gender": ["what is my gender", "what gender am i", "my gender", "tell me my gender", "what gender", "am i male or female", "gender"],
-            "ask_face_shape": ["what is my face shape", "what face shape am i", "my face shape", "tell me my face shape", "what face shape", "face shape"],
-            "ask_skin_tone": ["what is my skin tone", "what skin tone am i", "my skin tone", "tell me my skin tone", "what skin tone", "skin tone"],
-            "ask_skin_type": ["what is my skin type", "what skin type am i", "my skin type", "tell me my skin type", "what skin type", "skin type"],
-            "ask_hair_type": ["what is my hair type", "what hair type am i", "my hair type", "tell me my hair type", "what hair type", "hair type"]
-        }
-        
-        # Skin type keywords for NLP
-        self.SKIN_TYPES = {
-            "dry": ["dry", "flaky", "tight", "rough", "dehydrated", "patchy", "scaly", "parched"],
-            "normal": ["normal", "balanced", "healthy", "regular", "average", "combination"],
-            "oily": ["oily", "greasy", "shiny", "slick", "acne-prone", "excessive sebum", "t-zone oil", "excess oil"]
-        }
-
-        # Face shape keywords for NLP
-        self.FACE_SHAPES = {
-            "round": ["round", "circular", "full", "moon"],
-            "oval": ["oval", "egg", "oblong", "long"],
-            "square": ["square", "angular", "boxy", "rectangular"],
-            "heart": ["heart", "pointed chin", "wide forehead", "heart-shaped"]
-        }
-
-        # Hair type keywords for NLP
-        self.HAIR_TYPES = {
-            "straight": ["straight", "sleek", "flat"],
-            "wavy": ["wavy", "waves", "beach waves"],
-            "curly": ["curly", "curls", "coily"],
-            "kinky": ["kinky", "coarse", "tight curls", "afro"],
-            "dreadlocks": ["dreadlocks", "locs", "dreads"]
-        }
+        # Import intents from external file
+        self.BEAUTY_INTENTS = BEAUTY_INTENTS
+        self.SKIN_TYPES = SKIN_TYPES
+        self.FACE_SHAPES = FACE_SHAPES
+        self.HAIR_TYPES = HAIR_TYPES
 
         # Skincare advice templates
         self.SKINCARE_ADVICE = {
@@ -397,46 +364,41 @@ Would you like product recommendations for oil control?"""
         return None
 
     def detect_intent(self, text):
-        """Detect the intent from user's message"""
+        """Detect the intent from user's message - fully dynamic based on intents.py"""
         text = text.lower().strip()
         
-        # Check personal information questions first (highest priority) - use more precise matching
+        # Define priority order for intent checking
         personal_intents = ["ask_gender", "ask_face_shape", "ask_skin_tone", "ask_skin_type", "ask_hair_type"]
+        high_priority_intents = ["hair_recommendation", "product_recommendation"]
+        
+        # Check personal information questions first (highest priority)
         for intent in personal_intents:
-            keywords = self.BEAUTY_INTENTS[intent]
-            # Only match if it's clearly asking about personal info (starts with "what", "my", "tell me")
-            for keyword in keywords:
-                if (keyword.startswith("what") and keyword in text) or \
-                   (keyword.startswith("my") and text.startswith(keyword)) or \
-                   (keyword.startswith("tell me") and keyword in text) or \
-                   (text == keyword):  # Exact match for single words like "gender"
-                    return intent
+            if intent in self.BEAUTY_INTENTS:
+                keywords = self.BEAUTY_INTENTS[intent]
+                for keyword in keywords:
+                    # More precise matching for personal questions
+                    if (keyword.startswith("what") and keyword in text) or \
+                       (keyword.startswith("my") and text.startswith(keyword)) or \
+                       (keyword.startswith("tell me") and keyword in text) or \
+                       (text == keyword):  # Exact match for single words like "gender"
+                        return intent
         
-        # Check if it's a hair recommendation request
-        hair_rec_keywords = ["suggest me hair", "suggest hair", "hair recommendation", "recommend hair", "hair advice"]
-        if any(keyword in text for keyword in hair_rec_keywords):
-            return "hair_recommendation"
-            
-        # Check if it's a product recommendation request  
-        product_rec_keywords = ["product recommendation", "cosmetic recommendation", "recommend products", "suggest products"]
-        if any(keyword in text for keyword in product_rec_keywords):
-            return "product_recommendation"
+        # Check high priority intents (recommendations)
+        for intent in high_priority_intents:
+            if intent in self.BEAUTY_INTENTS:
+                keywords = self.BEAUTY_INTENTS[intent]
+                for keyword in keywords:
+                    if keyword in text:
+                        return intent
         
-        # Check for hairstyle questions (like "hair style for men...")
-        hairstyle_keywords = ["hair style for", "hairstyle for", "haircut for", "hair for"]
-        if any(keyword in text for keyword in hairstyle_keywords):
-            return "hairstyle"
-            
-        # Check for skincare routine requests
-        skincare_keywords = ["skincare routine", "skin care routine", "skincare advice", "skin care advice"]
-        if any(keyword in text for keyword in skincare_keywords):
-            return "skincare"
-        
-        # Then check other general intents
+        # Check all other intents from BEAUTY_INTENTS
         for intent, keywords in self.BEAUTY_INTENTS.items():
-            if intent not in personal_intents and intent not in ["hair_recommendation", "product_recommendation"]:
-                if any(keyword in text for keyword in keywords):
-                    return intent
+            # Skip already checked intents
+            if intent not in personal_intents and intent not in high_priority_intents:
+                for keyword in keywords:
+                    if keyword in text:
+                        return intent
+        
         return "unknown"
 
     def generate_hairstyle_response(self, user_state):
@@ -769,9 +731,6 @@ Would you like product recommendations for oil control?"""
                         else:
                             response = "I'll help you find the perfect hairstyle! First, are you looking for men's or women's hairstyles?"
                             user_state.last_question = 'gender'
-                    
-                elif intent == "makeup":
-                    response = "What kind of makeup advice are you looking for? I can help with color selection and application tips."
                     
                 elif intent == "hair_recommendation":
                     # Check if we have user's analysis data - check both hair_style and hair_type for compatibility
