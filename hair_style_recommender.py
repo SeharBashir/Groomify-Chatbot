@@ -42,10 +42,12 @@ class HairstyleRecommender:
             face_shape = face_shape.lower()
             hair_type = hair_type.lower()
 
-            # Map gender from detector format (Men/Women) to recommender format (male/female)
+            # Map gender from detector format to recommender format (male/female)
             gender_mapping = {
                 'men': 'male',
-                'women': 'female'
+                'women': 'female',
+                'male': 'male',     # Direct mapping for image analysis format
+                'female': 'female'  # Direct mapping for image analysis format  
             }
             gender = gender_mapping.get(gender, gender)
 

@@ -332,10 +332,29 @@ Would you like product recommendations for oil control?"""
 
     def get_hair_type_from_text(self, text):
         """Extract hair type from user's message"""
-        text = text.lower()
+        text = text.lower().strip()
+        
+        # Check for direct matches first
         for hair_type, keywords in self.HAIR_TYPES.items():
-            if any(keyword in text for keyword in keywords):
-                return hair_type
+            for keyword in keywords:
+                if keyword in text:
+                    print(f"Found hair type '{hair_type}' from keyword '{keyword}' in text '{text}'")
+                    return hair_type
+        
+        # Additional checks for common single word responses
+        if text in ['straight', 'wavy', 'curly', 'kinky', 'dreadlocks', 'flat', 'sleek', 'waves', 'curls', 'locs', 'dreads']:
+            if text in ['straight', 'flat', 'sleek']:
+                return 'straight'
+            elif text in ['wavy', 'waves']:
+                return 'wavy'
+            elif text in ['curly', 'curls']:
+                return 'curly'
+            elif text == 'kinky':
+                return 'kinky'
+            elif text in ['dreadlocks', 'locs', 'dreads']:
+                return 'dreadlocks'
+        
+        print(f"No hair type found for text: '{text}'")
         return None
 
     def get_skin_type_from_text(self, text):
@@ -376,11 +395,8 @@ Would you like product recommendations for oil control?"""
             if intent in self.BEAUTY_INTENTS:
                 keywords = self.BEAUTY_INTENTS[intent]
                 for keyword in keywords:
-                    # More precise matching for personal questions
-                    if (keyword.startswith("what") and keyword in text) or \
-                       (keyword.startswith("my") and text.startswith(keyword)) or \
-                       (keyword.startswith("tell me") and keyword in text) or \
-                       (text == keyword):  # Exact match for single words like "gender"
+                    # Simple matching - if keyword exists in text, return intent
+                    if keyword in text:
                         return intent
         
         # Check high priority intents (recommendations)
@@ -413,26 +429,29 @@ Would you like product recommendations for oil control?"""
             user_state.last_question = 'face_shape'
             return "What's your face shape? (round, oval, square, heart)"
             
-        if 'hair_type' not in info:
+        # Check for hair_style or hair_type (for compatibility)
+        hair_type_key = 'hair_style' if 'hair_style' in info else 'hair_type'
+        if hair_type_key not in info:
             user_state.last_question = 'hair_type'
             return "What's your hair type? (straight, wavy, curly, kinky, or dreadlocks)"
             
         # All information collected, get recommendations
         try:
+            hair_type_value = info[hair_type_key]
             recommendations = self.hairstyle_recommender.recommend_hairstyle(
                 gender=info['gender'],
                 face_shape=info['face_shape'],
-                hair_type=info['hair_type']
+                hair_type=hair_type_value
             )
             
             # Format recommendations into a nice message
-            response = f"Based on your {info['face_shape']} face shape and {info['hair_type']} hair, here are some recommendations:\n\n"
+            response = f"Based on your {info['face_shape']} face shape and {hair_type_value} hair, here are some recommendations:\n\n"
             for rec in recommendations:
                 response += f"• {rec['style']}: {rec['description']}\n"
             
-            # Reset state since we're done
+            # Reset context but KEEP the collected info for future reference
             user_state.context = None
-            user_state.collected_info = {}
+            # DON'T clear collected_info so user can ask follow-up questions
             
             return response
         except Exception as e:
@@ -546,9 +565,13 @@ Would you like product recommendations for oil control?"""
                 # Continue hair recommendation flow
                 if user_state.last_question == 'gender':
                     if 'men' in message_text.lower() or 'male' in message_text.lower():
-                        user_state.collected_info['gender'] = 'Men'
+                        # Store gender in the same format as image analysis
+                        user_state.collected_info['gender'] = 'Male'  # Match image analysis format
+                        print(f"Successfully collected gender: Male")
                     elif 'women' in message_text.lower() or 'female' in message_text.lower():
-                        user_state.collected_info['gender'] = 'Women'
+                        # Store gender in the same format as image analysis  
+                        user_state.collected_info['gender'] = 'Female'  # Match image analysis format
+                        print(f"Successfully collected gender: Female")
                     else:
                         return {
                             'intent': intent,
@@ -558,7 +581,9 @@ Would you like product recommendations for oil control?"""
                 elif user_state.last_question == 'face_shape':
                     face_shape = self.get_face_shape_from_text(message_text)
                     if face_shape:
-                        user_state.collected_info['face_shape'] = face_shape
+                        # Store face shape consistently
+                        user_state.collected_info['face_shape'] = face_shape.title()  # Capitalize first letter
+                        print(f"Successfully collected face shape: {face_shape.title()}")
                     else:
                         return {
                             'intent': intent,
@@ -568,13 +593,19 @@ Would you like product recommendations for oil control?"""
                 elif user_state.last_question == 'hair_type':
                     hair_type = self.get_hair_type_from_text(message_text)
                     if hair_type:
-                        user_state.collected_info['hair_style'] = hair_type  # Store as hair_style for consistency
+                        # Store as both hair_style and hair_type for compatibility
+                        user_state.collected_info['hair_style'] = hair_type.title()  # Capitalize for consistency
+                        user_state.collected_info['hair_type'] = hair_type.title()   # Capitalize for consistency
+                        print(f"Successfully collected hair type: {hair_type.title()}")
+                        # Continue to generate response since we have all info now
                     else:
                         return {
                             'intent': intent,
                             'response': "I didn't catch your hair type. Is it straight, wavy, curly, kinky, or dreadlocks?"
                         }
                 
+                # Always call generate_hairstyle_response to determine next step
+                print(f"Current collected info: {user_state.collected_info}")
                 response = self.generate_hairstyle_response(user_state)
                 
             else:
