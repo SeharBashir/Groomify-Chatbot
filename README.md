@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Groomify AI Chatbot
 
 Groomify AI Chatbot is an intelligent virtual assistant that provides personalized beauty and grooming recommendations based on facial analysis, hair type detection, gender detection, and skin type analysis. The system uses advanced deep learning models to provide tailored advice for hairstyles and skincare products.
@@ -55,3 +56,6 @@ The system uses state-of-the-art deep learning models:
 ## Installation & Setup
 
 See `how_to_run.txt` for detailed installation and running instructions.
+=======
+# Groomify-Chatbot
+>>>>>>> 4338e50c657f30766938af138460f5ff24ef58dd
